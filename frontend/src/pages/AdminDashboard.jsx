@@ -6,7 +6,7 @@ import { useAuth } from '../AuthContext';
 import StatCard from '../components/StatCard'; 
 import StatusPill from '../components/StatusPill'; 
 
-// --- Task Form Component (Optimized for aesthetic and single-select) ---
+// --- Task Form Component ---
 const TaskForm = ({ employees, onCreateTask }) => {
     const initialTask = { title: '', description: '', deadline: '', assignedTo: '' };
     const [newTask, setNewTask] = useState(initialTask);
@@ -33,7 +33,6 @@ const TaskForm = ({ employees, onCreateTask }) => {
     };
 
     return (
-        // FORM CONTAINER: bg-white with strong shadow and hover animation
         <form onSubmit={handleCreate} className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl">
             <h3 className="text-2xl font-extrabold text-gray-700 mb-4 border-b-4 border-accent-teal/50 pb-2">Assign New Task</h3>
             
@@ -44,7 +43,7 @@ const TaskForm = ({ employees, onCreateTask }) => {
                 </div>
                 <div>
                     <label className="text-sm font-medium text-gray-700 block mb-1">Task Description</label>
-                    <textarea name="description" placeholder="Detailed instructions for the task..." value={newTask.description} onChange={handleChange} required rows="3" className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-accent-teal focus:border-accent-teal transition duration-200" />
+                    <textarea type="text" name="description" placeholder="Detailed instructions for the task..." value={newTask.description} onChange={handleChange} required rows="3" className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-accent-teal focus:border-accent-teal transition duration-200" />
                 </div>
                 <div>
                     <label className="text-sm font-medium text-gray-700 block mb-1">Deadline Date</label>
@@ -124,14 +123,12 @@ function AdminDashboard() {
   if (loading) return <div className="min-h-screen flex items-center justify-center text-2xl text-primary-blue font-extrabold bg-secondary-gray">Loading Dashboard Data...</div>;
 
 
-  // --- Logic to separate Active and Completed Tasks ---
   const activeTasks = tasks.filter(task => task.status !== 'Completed');
   const completedTasks = tasks.filter(task => task.status === 'Completed');
   
   const totalEmployees = employees.length;
-  const pendingTasksCount = activeTasks.filter(t => t.status === 'Pending').length; // Filtered from active list
+  const pendingTasksCount = activeTasks.filter(t => t.status === 'Pending').length;
   const completedTasksCount = completedTasks.length;
-  // ---------------------------------------------------
 
 
   return (
@@ -204,7 +201,7 @@ function AdminDashboard() {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-100">
-                                    {/* Iterate over tasks that are NOT completed */}
+                                    {/* Only iterate over tasks that are NOT completed */}
                                     {activeTasks.map(task => (
                                         <tr key={task._id} className="group hover:bg-indigo-50/50 transition duration-150"> 
                                             <td className="px-6 py-4 text-sm font-medium text-gray-900">
@@ -238,7 +235,7 @@ function AdminDashboard() {
                 </div>
             </div>
             
-            {/* Completed Tasks Section (New Dedicated Section) */}
+            {/* Completed Tasks Section (Archive) */}
             <h2 className="text-2xl font-semibold mt-10 mb-4 text-gray-700">Completed Tasks Archive</h2>
             <div className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl">
                 <div className="overflow-x-auto">

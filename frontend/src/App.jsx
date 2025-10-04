@@ -62,7 +62,7 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
       
-      {/* Approval and Management Routes (Accessed by Admin role now) */}
+      {/* Approval and Management Routes */}
       <Route path="/admin/approval" element={
         <ProtectedRoute allowedRoles={['admin']}>
           <ApprovalPanel />
