@@ -10,9 +10,13 @@ const isEmployee = (req, res, next) => {
 
 router.use(isEmployee);
 
+// routes/employee.js (Inside router.get('/dashboard', ...))
+
 router.get('/dashboard', async (req, res) => {
     try {
+        // REVERT: Query tasks where assignedTo field DIRECTLY equals the user's ID
         const tasks = await Task.find({ assignedTo: req.session.userId }).sort({ deadline: 1 });
+        
         res.json({ tasks, employeeName: req.session.name });
     } catch (err) {
         res.status(500).json({ error: 'Server Error loading dashboard data.' });
