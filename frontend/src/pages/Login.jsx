@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
+// Theme hooks and button components are removed
 
 function Login() {
   const [username, setUsername] = useState('');
@@ -20,10 +21,13 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-secondary-gray">
+    // Note: Dark mode classes are removed since the toggle is gone
+    <div className="min-h-screen flex items-center justify-center bg-secondary-gray relative"> 
       <div className="bg-white p-10 rounded-xl shadow-elevate w-full max-w-md transform transition duration-500 hover:scale-[1.01]">
         
-        <h2 className="text-4xl font-extrabold text-center mb-2 text-primary-blue">
+        {/* THEME BUTTON ABSOLUTE PLACEMENT REMOVED */}
+        
+        <h2 className="text-4xl font-extrabold text-primary-blue text-center mb-2">
           TaskFlow Portal
         </h2>
         <p className="text-center text-gray-500 mb-8">Sign in to manage your tasks.</p>
@@ -48,7 +52,7 @@ function Login() {
           
           <button 
             type="submit"
-            className="w-full bg-primary-blue text-white py-3 rounded-xl font-semibold text-lg shadow-smooth hover:bg-primary-blue/90 transition duration-200"
+            className="w-full bg-primary-blue text-white py-3 rounded-xl font-semibold text-lg shadow-smooth hover:bg-indigo-600 transition duration-200"
           >
             Sign In
           </button>
@@ -57,6 +61,9 @@ function Login() {
         {error && <p className="text-red-500 mt-4 text-center text-sm">{error}</p>}
         
         <p className="mt-8 text-center text-sm text-gray-600">
+          <Link to="/forgot-password" className="text-accent-teal hover:underline font-medium block mb-2">
+            Forgot Password?
+          </Link>
           Don't have an account? 
           <Link to="/register" className="text-accent-teal hover:underline ml-1 font-medium">
             Register here

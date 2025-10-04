@@ -1,18 +1,16 @@
-// frontend/src/pages/ApprovalPanel.jsx
+//frontend/src/pages/ApprovalPanel.jsx (Replace the file content)
+
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useAuth } from '../AuthContext';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
 
 function ApprovalPanel() {
-    const { user } = useAuth();
-    const navigate = useNavigate(); // Initialize useNavigate
+    const navigate = useNavigate();
     const [pendingUsers, setPendingUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     const fetchPendingUsers = useCallback(async () => {
-        // Since only 'admin' can access this page via the ProtectedRoute, no explicit role check is needed here
         try {
             const res = await axios.get('/api/admin/pending-users');
             setPendingUsers(res.data.users);
@@ -28,21 +26,37 @@ function ApprovalPanel() {
         fetchPendingUsers();
     }, [fetchPendingUsers]);
 
-    // Admin can ONLY approve as 'employee'
+    // Admin approves the user, setting role to 'employee'
     const handleApprove = async (userId) => {
         setError('');
         if (!window.confirm("Approve this user as an Employee?")) {
             return;
         }
         try {
-            // newRole is hardcoded to 'employee'
-            const res = await axios.post(`/api/admin/user/approve/${userId}`, { newRole: 'employee' });
-            alert(res.data.message);
+            await axios.post(`/api/admin/user/approve/${userId}`, { newRole: 'employee' });
+            alert("User approved and granted Employee access!");
             fetchPendingUsers(); // Refresh list
         } catch (err) {
             setError(err.response?.data?.error || 'Approval failed.');
         }
     };
+    
+    // --- NEW: Handle Rejection (Deletion) ---
+    const handleReject = async (userId, username) => {
+        setError('');
+        if (!window.confirm(`Are you sure you want to permanently REJECT and DELETE the user: ${username}?`)) {
+            return;
+        }
+        try {
+            // Use the existing DELETE endpoint for permanent rejection
+            await axios.delete(`/api/admin/user/${userId}`);
+            alert(`User ${username} permanently rejected and removed.`);
+            fetchPendingUsers(); // Refresh list
+        } catch (err) {
+            setError(err.response?.data?.error || 'Rejection failed.');
+        }
+    };
+    // ----------------------------------------
 
     if (loading) return <div className="p-8 text-center">Loading Approval Panel...</div>;
 
@@ -52,7 +66,6 @@ function ApprovalPanel() {
                 <h2 className="text-3xl font-extrabold text-primary-blue">
                     Employee Authorization Queue
                 </h2>
-                {/* BACK BUTTON INTEGRATION */}
                 <button 
                     onClick={() => navigate('/admin/dashboard')} 
                     className="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm hover:bg-gray-400 transition"
@@ -79,7 +92,13 @@ function ApprovalPanel() {
                                         onClick={() => handleApprove(u._id)} 
                                         className="bg-accent-teal text-white px-4 py-2 rounded-lg text-sm hover:bg-accent-teal/90 transition shadow-md"
                                     >
-                                        Approve as Employee
+                                        Approve
+                                    </button>
+                                    <button 
+                                        onClick={() => handleReject(u._id, u.username)} 
+                                        className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600 transition shadow-md"
+                                    >
+                                        Reject & Delete
                                     </button>
                                 </div>
                             </div>
@@ -87,9 +106,10 @@ function ApprovalPanel() {
                     </div>
                 )}
             </div>
-            <p className="mt-4 text-sm text-gray-500">Note: All pending registrations are processed as "Employee" role.</p>
+            <p className="mt-4 text-sm text-gray-500">Note: All pending registrations are processed as "Employee" role upon approval.</p>
         </div>
     );
 }
 
 export default ApprovalPanel;
+
