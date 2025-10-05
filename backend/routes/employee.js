@@ -107,4 +107,18 @@ router.post('/notifications/mark-read', isEmployee, async (req, res) => {
     }
 });
 
+router.get('/me', isEmployee, async (req, res) => {
+    try {
+        // Fetch current user details securely using session ID, excluding sensitive fields
+        const user = await User.findById(req.session.userId).select('-password -role -isApproved'); 
+        if (!user) { 
+            return res.status(404).json({ error: 'User not found.' }); 
+        }
+        // Return the user data structure the frontend expects
+        res.json({ user });
+    } catch (err) {
+        console.error("Employee Profile Fetch Error:", err);
+        res.status(500).json({ error: 'Server error fetching user data.' });
+    }
+});
 module.exports = router;

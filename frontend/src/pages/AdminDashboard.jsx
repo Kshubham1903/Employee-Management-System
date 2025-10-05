@@ -34,7 +34,7 @@ const TaskForm = ({ employees, onCreateTask }) => {
     };
 
     return (
-        // FORM CONTAINER: bg-white with strong shadow, designed for 1/3 width
+        // FORM CONTAINER: This will set the target height (approximately h-[35rem])
         <form onSubmit={handleCreate} className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl mb-10 lg:mb-0">
             <h3 className="text-2xl font-extrabold text-gray-700 mb-4 border-b-4 border-accent-teal/50 pb-2">Assign New Task</h3>
             
@@ -75,11 +75,11 @@ const TaskForm = ({ employees, onCreateTask }) => {
         </form>
     );
 };
-// ---------------------------------------------------
 
-// Helper function to render a task table
-const renderTaskTable = (tasks, title, emptyMessage, headerBgClass) => (
-    // This wrapper is designed to be full width when rendered alone
+
+// --- Helper to Render Table Content (Used by the tab view and archive) ---
+const renderTaskTableContent = (tasks, title, emptyMessage, headerBgClass, handleDeleteTask, isArchive = false) => (
+    // Outer wrapper for the table and title
     <div className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl mb-8">
         <h2 className="text-2xl font-semibold mb-6 text-gray-700 border-b pb-2 border-gray-200">{title} ({tasks.length})</h2>
         <div className="overflow-x-auto">
@@ -113,12 +113,21 @@ const renderTaskTable = (tasks, title, emptyMessage, headerBgClass) => (
 
                                 {/* DELETE BUTTON CELL */}
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button 
-                                        onClick={() => window.confirm("Are you sure you want to delete this task?") && axios.delete(`/api/admin/tasks/${task._id}`).then(() => location.reload())}
-                                        className="bg-red-500 text-white px-3 py-1 rounded text-xs shadow-sm transition duration-200 hover:bg-red-700 transform hover:scale-105"
-                                    >
-                                        Delete
-                                    </button>
+                                    {isArchive ? (
+                                        <button 
+                                            onClick={() => window.confirm("Delete this completed task permanently?") && axios.delete(`/api/admin/tasks/${task._id}`).then(() => location.reload())}
+                                            className="bg-red-300 text-red-800 px-3 py-1 rounded text-xs shadow-sm transition duration-200 hover:bg-red-500 hover:text-white"
+                                        >
+                                            Delete Permanently
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={() => window.confirm("Are you sure you want to delete this task?") && axios.delete(`/api/admin/tasks/${task._id}`).then(() => location.reload())}
+                                            className="bg-red-500 text-white px-3 py-1 rounded text-xs shadow-sm transition duration-200 hover:bg-red-700 transform hover:scale-105"
+                                        >
+                                            Delete
+                                        </button>
+                                    )}
                                 </td>
                             </tr>
                         ))}
@@ -137,6 +146,8 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
+  const [activeTab, setActiveTab] = useState('Pending'); 
+
   const fetchData = useCallback(async () => {
     try {
       const res = await axios.get('/api/admin/dashboard');
@@ -166,7 +177,6 @@ function AdminDashboard() {
   };
   
   const handleDeleteTask = async (taskId) => {
-    // This is primarily for the Completed Tasks Archive section
     try {
       await axios.delete(`/api/admin/tasks/${taskId}`);
       fetchData();
@@ -174,10 +184,8 @@ function AdminDashboard() {
         setError(err.response?.data?.error || 'Failed to delete task.');
     }
   };
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-2xl text-primary-blue font-extrabold bg-secondary-gray">Loading Dashboard Data...</div>;
-
-
+  
+  // --- Filtering Tasks for Tabs and Stats ---
   const pendingTasks = tasks.filter(task => task.status === 'Pending');
   const acceptedTasks = tasks.filter(task => task.status === 'Accepted');
   const rejectedTasks = tasks.filter(task => task.status === 'Rejected');
@@ -185,9 +193,33 @@ function AdminDashboard() {
   
   const totalEmployees = employees.length;
   const pendingTasksCount = pendingTasks.length;
-  const completedTasksCount = completedTasks.length;
   const acceptedTasksCount = acceptedTasks.length;
   const rejectedTasksCount = rejectedTasks.length;
+  const completedTasksCount = completedTasks.length;
+
+  // Function to render the content of the currently active tab
+  const renderTabContent = () => {
+    switch (activeTab) {
+        case 'Pending':
+            return renderTaskTableContent(pendingTasks, "Pending Tasks (Awaiting Acceptance)", "No pending tasks found.", "bg-yellow-100/70", handleDeleteTask);
+        case 'Accepted':
+            return renderTaskTableContent(acceptedTasks, "Accepted Tasks (In Progress)", "No accepted tasks found.", "bg-blue-100/70", handleDeleteTask);
+        case 'Rejected':
+            return renderTaskTableContent(rejectedTasks, "Rejected Tasks (Requires Review)", "No rejected tasks found.", "bg-red-100/70", handleDeleteTask);
+        default:
+            return null;
+    }
+  };
+  
+  // Array defining tab structure
+  const tabs = [
+    { name: 'Pending', count: pendingTasksCount, color: 'text-yellow-600', hoverBg: 'hover:bg-yellow-100' },
+    { name: 'Accepted', count: acceptedTasksCount, color: 'text-blue-600', hoverBg: 'hover:bg-blue-100' },
+    { name: 'Rejected', count: rejectedTasksCount, color: 'text-red-600', hoverBg: 'hover:bg-red-100' },
+  ];
+
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center text-2xl text-primary-blue font-extrabold bg-secondary-gray">Loading Dashboard Data...</div>;
 
 
   return (
@@ -241,7 +273,7 @@ function AdminDashboard() {
                 <StatCard title="Completed" value={completedTasksCount} icon="✅" color="bg-accent-teal" />
             </div>
             
-            {/* --- 1. FORM AND PENDING TASKS GRID (Side-by-Side on Desktop) --- */}
+            {/* --- 1. FORM AND ACTIVE TASKS GRID (Side-by-Side on Desktop) --- */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
                 
                 {/* A. Task Form (Left Column: 1/3 width) */}
@@ -249,81 +281,50 @@ function AdminDashboard() {
                     <TaskForm employees={employees} onCreateTask={handleCreateTask} />
                 </div>
 
-                {/* B. Pending Tasks Table (Right Column: 2/3 width) */}
+                {/* B. Active Task List VIEWER (Right Column: 2/3 width) */}
                 <div className="lg:col-span-2">
-                    {renderTaskTable(
-                        pendingTasks, 
-                        "Pending Tasks (Awaiting Acceptance)", 
-                        "All tasks are accepted or completed.", 
-                        "bg-yellow-100/70"
-                    )}
+                    <div className="bg-white rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl h-full"> {/* ADDED h-full HERE */}
+                        
+                        {/* Tab Headers */}
+                        <div className="flex border-b border-gray-200">
+                            {tabs.map((tab) => (
+                                <button 
+                                    key={tab.name}
+                                    onClick={() => setActiveTab(tab.name)}
+                                    className={`flex-1 px-4 py-3 text-center text-sm font-medium transition-colors duration-200 
+                                                ${tab.hoverBg}
+                                                ${activeTab === tab.name 
+                                                    ? 'border-b-4 border-primary-blue/80 text-primary-blue' 
+                                                    : 'text-gray-500 hover:text-gray-800'}`}
+                                >
+                                    {tab.name} 
+                                    <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold ${tab.color} ${tab.color.replace('600', '100')}`}>
+                                        {tab.count}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                        
+                        {/* Tab Content Area: CRITICAL FIX: Adding max height to the scrollable container */}
+                        <div className="p-4 max-h-[30rem] overflow-y-auto"> 
+                           {renderTabContent()}
+                        </div>
+
+                    </div>
                 </div>
             </div>
             
-            {/* --- 2. ACCEPTED TASKS (FULL WIDTH BLOCK) --- */}
-            {renderTaskTable(
-                acceptedTasks, 
-                "Accepted Tasks (In Progress)", 
-                "No tasks currently in progress.", 
-                "bg-blue-100/70"
-            )}
-
-            {/* --- 3. REJECTED TASKS (FULL WIDTH BLOCK) --- */}
-            {renderTaskTable(
-                rejectedTasks, 
-                "Rejected Tasks (Requires Review)", 
-                "No tasks have been rejected.", 
-                "bg-red-100/70"
-            )}
-            
-            {/* 4. COMPLETED TASKS ARCHIVE (FULL WIDTH BLOCK) */}
+            {/* 2. COMPLETED TASKS ARCHIVE (FULL WIDTH BLOCK BELOW) */}
             <h2 className="text-2xl font-semibold mt-10 mb-4 text-gray-700">Completed Tasks Archive</h2>
-            <div className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl">
-                <div className="overflow-x-auto">
-                    {completedTasks.length === 0 ? (
-                        <p className="text-center text-gray-500 py-4">No tasks have been marked as completed yet.</p>
-                    ) : (
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-accent-teal/10">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-accent-teal uppercase tracking-wider">Title / Assigned To</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-accent-teal uppercase tracking-wider">Completion Date</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-accent-teal uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-accent-teal uppercase tracking-wider">Archive Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-100">
-                                {completedTasks.map(task => (
-                                    <tr key={task._id} className="group hover:bg-indigo-50/50 transition duration-150">
-                                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                            {task.title}
-                                            <p className="text-xs text-gray-500 mt-0.5">Assigned to: {task.assignedTo?.name || 'N/A'}</p>
-                                        </td>
-                                        
-                                        <td className="px-6 py-4 text-sm text-gray-500">
-                                            {new Date().toLocaleDateString()}
-                                        </td>
-                                        
-                                        <td className="px-6 py-4">
-                                            <StatusPill status={task.status} />
-                                        </td>
-
-                                        {/* ARCHIVE DELETE BUTTON */}
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <button 
-                                                onClick={() => window.confirm("Delete this completed task permanently?") && handleDeleteTask(task._id)}
-                                                className="bg-red-300 text-red-800 px-3 py-1 rounded text-xs shadow-sm transition duration-200 hover:bg-red-500 hover:text-white"
-                                            >
-                                                Delete Permanently
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
-            </div>
+            {/* Removed internal div wrapper to simplify the height issue */}
+            {renderTaskTableContent(
+                completedTasks, 
+                "Completed Tasks Archive", 
+                "No tasks have been marked as completed yet.", 
+                "bg-accent-teal/10",
+                handleDeleteTask,
+                true // isArchive = true
+            )}
         </div>
     </div>
   );
