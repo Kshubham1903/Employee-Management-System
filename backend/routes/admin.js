@@ -1,6 +1,7 @@
 // routes/admin.js
 const express = require('express');
 const router = express.Router(); // <--- FIX APPLIED
+const Notification = require('../models/Notification'); // NEW IMPORT
 
 const User = require('../models/User');
 const Task = require('../models/Task');
@@ -17,6 +18,48 @@ const isAdmin = (req, res, next) => {
 
 router.use(isAdmin); // Apply Admin middleware to all routes in this file
 
+
+
+router.delete('/notifications/all', isAdmin, async (req, res) => { // <-- CRITICAL FIX: isAdmin ADDED
+    try {
+        const result = await Notification.deleteMany({ 
+            recipient: req.session.userId 
+        });
+
+        if (result.deletedCount === 0) {
+            // It's still a successful operation if there was nothing to delete
+            return res.json({ message: 'No notifications found to clear.' });
+        }
+
+        res.json({ message: `${result.deletedCount} notifications cleared.` });
+    } catch (err) {
+        console.error("Error clearing all notifications:", err);
+        res.status(500).json({ error: 'Failed to clear all notifications.' });
+    }
+});
+
+
+
+
+router.delete('/notifications/:notificationId', isAdmin, async (req, res) => {
+    const { notificationId } = req.params;
+    try {
+        // Ensure the notification belongs to the logged-in admin before deleting
+        const result = await Notification.deleteOne({ 
+            _id: notificationId, 
+            recipient: req.session.userId 
+        });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ error: 'Notification not found or access denied.' });
+        }
+
+        res.json({ message: 'Notification deleted.' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to delete notification.' });
+    }
+});
 // --- Standard Admin Routes (Task Management) ---
 router.get('/dashboard', async (req, res) => {
     try {
@@ -186,5 +229,46 @@ router.post('/user/update/:userId', async (req, res) => {
         res.status(500).json({ error: 'Server error during update.' });
     }
 });
+
+router.get('/notifications', isAdmin, async (req, res) => {
+    try {
+        const notifications = await Notification.find({ recipient: req.session.userId })
+            .sort({ createdAt: -1 })
+            .limit(20); 
+        
+        const unreadCount = await Notification.countDocuments({ recipient: req.session.userId, isRead: false });
+
+        res.json({ notifications, unreadCount });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to fetch notifications.' });
+    }
+});
+
+// router.post('/notifications/mark-read', isAdmin, async (req, res) => {
+//     try {
+//         await Notification.updateMany(
+//             { recipient: req.session.userId, isRead: false },
+//             { $set: { isRead: true } }
+//         );
+//         res.json({ message: 'Notifications marked as read.' });
+//     } catch (err) {
+//         res.status(500).json({ error: 'Failed to mark notifications as read.' });
+//     }
+// });
+
+router.post('/notifications/mark-read', isAdmin, async (req, res) => {
+    try {
+        await Notification.updateMany(
+            { recipient: req.session.userId, isRead: false },
+            { $set: { isRead: true } }
+        );
+        res.json({ message: 'Notifications marked as read.' });
+    } catch (err) {
+        res.status(500).json({ error: 'Failed to mark notifications as read.' });
+    }
+});
+
+// --- NEW: DELETE SINGLE NOTIFICATION (One-Click Delete) ---
+
 
 module.exports = router;

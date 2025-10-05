@@ -6,11 +6,17 @@ const TaskSchema = new mongoose.Schema({
     description: { type: String, required: true },
     deadline: { type: Date, required: true },
     
-    // --- REVERT: assignedTo is back to a single ObjectId ---
+    // Single-person assignment
     assignedTo: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'User', 
         required: true 
+    },
+    
+
+    isRead: {
+        type: Boolean,
+        default: false 
     },
     // --------------------------------------------------------
 

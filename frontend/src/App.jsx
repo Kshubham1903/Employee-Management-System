@@ -12,7 +12,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import ApprovalPanel from './pages/ApprovalPanel';     
 import EmployeeView from './pages/EmployeeView';     
-import ManageUser from './pages/ManageUser';     
+import ManageUser from './pages/ManageUser';    
+import EmployeeProfileEdit from './pages/EmployeeProfileEdit';  
 // --------------------
 
 
@@ -80,6 +81,11 @@ function AppRoutes() {
           <EmployeeDashboard />
         </ProtectedRoute>
       } />
+      <Route path="/employee/profile-edit" element={
+        <ProtectedRoute allowedRoles={['employee']}>
+          <EmployeeProfileEdit />
+        </ProtectedRoute>
+    } />
 
       {/* Fallback 404 */}
       <Route path="*" element={<div className="p-8 text-center text-xl font-bold">404 - Not Found</div>} />

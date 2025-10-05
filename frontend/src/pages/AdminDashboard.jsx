@@ -5,8 +5,9 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import StatCard from '../components/StatCard'; 
 import StatusPill from '../components/StatusPill'; 
+import NotificationCenter from '../components/NotificationCenter'; 
 
-// --- Task Form Component ---
+// --- Task Form Component (unchanged logic) ---
 const TaskForm = ({ employees, onCreateTask }) => {
     const initialTask = { title: '', description: '', deadline: '', assignedTo: '' };
     const [newTask, setNewTask] = useState(initialTask);
@@ -33,7 +34,8 @@ const TaskForm = ({ employees, onCreateTask }) => {
     };
 
     return (
-        <form onSubmit={handleCreate} className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl">
+        // FORM CONTAINER: bg-white with strong shadow, designed for 1/3 width
+        <form onSubmit={handleCreate} className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl mb-10 lg:mb-0">
             <h3 className="text-2xl font-extrabold text-gray-700 mb-4 border-b-4 border-accent-teal/50 pb-2">Assign New Task</h3>
             
             <div className='space-y-4'>
@@ -53,7 +55,13 @@ const TaskForm = ({ employees, onCreateTask }) => {
             
             <div className="pt-2">
                 <label className="text-sm font-medium text-gray-700 block mb-2">Assign To (Select one employee)</label>
-                <select name="assignedTo" value={newTask.assignedTo} onChange={handleChange} required className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-accent-teal hover:border-indigo-400 transition duration-200">
+                <select 
+                    name="assignedTo" 
+                    value={newTask.assignedTo} 
+                    onChange={handleChange} 
+                    required 
+                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-accent-teal hover:border-indigo-400 transition duration-200"
+                >
                     <option value="" disabled>Select Employee</option>
                     {employees.map(emp => (
                         <option key={emp._id} value={emp._id}>{emp.name} ({emp.username})</option>
@@ -68,6 +76,58 @@ const TaskForm = ({ employees, onCreateTask }) => {
     );
 };
 // ---------------------------------------------------
+
+// Helper function to render a task table
+const renderTaskTable = (tasks, title, emptyMessage, headerBgClass) => (
+    // This wrapper is designed to be full width when rendered alone
+    <div className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl mb-8">
+        <h2 className="text-2xl font-semibold mb-6 text-gray-700 border-b pb-2 border-gray-200">{title} ({tasks.length})</h2>
+        <div className="overflow-x-auto">
+            {tasks.length === 0 ? (
+                <p className="text-center text-gray-500 py-4">{emptyMessage}</p>
+            ) : (
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className={headerBgClass}>
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-bold text-primary-blue uppercase tracking-wider">Title / Assigned To</th>
+                            <th className="px-6 py-3 text-left text-xs font-bold text-primary-blue uppercase tracking-wider">Deadline</th>
+                            <th className="px-6 py-3 text-left text-xs font-bold text-primary-blue uppercase tracking-wider">Status</th>
+                            <th className="px-6 py-3 text-left text-xs font-bold text-primary-blue uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                        {tasks.map(task => (
+                            <tr key={task._id} className="group hover:bg-indigo-50/50 transition duration-150"> 
+                                <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                                    {task.title}
+                                    <p className="text-xs text-gray-500 mt-0.5">Assigned to: {task.assignedTo?.name || 'N/A'}</p>
+                                </td>
+                                
+                                <td className="px-6 py-4 text-sm text-gray-500">
+                                    {new Date(task.deadline).toLocaleDateString()}
+                                </td>
+                                
+                                <td className="px-6 py-4">
+                                    <StatusPill status={task.status} />
+                                </td>
+
+                                {/* DELETE BUTTON CELL */}
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <button 
+                                        onClick={() => window.confirm("Are you sure you want to delete this task?") && axios.delete(`/api/admin/tasks/${task._id}`).then(() => location.reload())}
+                                        className="bg-red-500 text-white px-3 py-1 rounded text-xs shadow-sm transition duration-200 hover:bg-red-700 transform hover:scale-105"
+                                    >
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            )}
+        </div>
+    </div>
+);
 
 
 function AdminDashboard() {
@@ -106,29 +166,28 @@ function AdminDashboard() {
   };
   
   const handleDeleteTask = async (taskId) => {
-    setError('');
-    if (!window.confirm("Are you sure you want to delete this task? This cannot be undone.")) {
-      return; 
-    }
-
+    // This is primarily for the Completed Tasks Archive section
     try {
       await axios.delete(`/api/admin/tasks/${taskId}`);
-      alert('Task deleted successfully!');
-      fetchData(); 
+      fetchData();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to delete task.');
+        setError(err.response?.data?.error || 'Failed to delete task.');
     }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center text-2xl text-primary-blue font-extrabold bg-secondary-gray">Loading Dashboard Data...</div>;
 
 
-  const activeTasks = tasks.filter(task => task.status !== 'Completed');
+  const pendingTasks = tasks.filter(task => task.status === 'Pending');
+  const acceptedTasks = tasks.filter(task => task.status === 'Accepted');
+  const rejectedTasks = tasks.filter(task => task.status === 'Rejected');
   const completedTasks = tasks.filter(task => task.status === 'Completed');
   
   const totalEmployees = employees.length;
-  const pendingTasksCount = activeTasks.filter(t => t.status === 'Pending').length;
+  const pendingTasksCount = pendingTasks.length;
   const completedTasksCount = completedTasks.length;
+  const acceptedTasksCount = acceptedTasks.length;
+  const rejectedTasksCount = rejectedTasks.length;
 
 
   return (
@@ -140,6 +199,8 @@ function AdminDashboard() {
                     Optimistic <span className="text-accent-teal">TaskFlow</span>
                 </h1>
                 <div className="flex items-center space-x-4">
+                    
+                    <NotificationCenter />
                     
                     {/* View Employees Link */}
                     <Link 
@@ -173,69 +234,49 @@ function AdminDashboard() {
             {error && <div className="p-3 mb-4 bg-red-100 text-red-700 border border-red-400 rounded">{error}</div>}
 
             {/* Stats Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
                 <StatCard title="Total Employees" value={totalEmployees} icon="👥" color="bg-indigo-600" />
-                <StatCard title="Pending Tasks" value={pendingTasksCount} icon="⏳" color="bg-yellow-600" />
-                <StatCard title="Completed Tasks" value={completedTasksCount} icon="✅" color="bg-accent-teal" />
+                <StatCard title="Pending" value={pendingTasksCount} icon="⏳" color="bg-yellow-600" />
+                <StatCard title="Accepted" value={acceptedTasksCount} icon="▶️" color="bg-blue-500" />
+                <StatCard title="Completed" value={completedTasksCount} icon="✅" color="bg-accent-teal" />
             </div>
             
-            {/* Main Grid: Form and Active Tasks */}
+            {/* --- 1. FORM AND PENDING TASKS GRID (Side-by-Side on Desktop) --- */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-                {/* Task Form (Left Column) */}
+                
+                {/* A. Task Form (Left Column: 1/3 width) */}
                 <div className="lg:col-span-1">
                     <TaskForm employees={employees} onCreateTask={handleCreateTask} />
                 </div>
 
-                {/* Active Task List (Right Column) */}
+                {/* B. Pending Tasks Table (Right Column: 2/3 width) */}
                 <div className="lg:col-span-2">
-                    <div className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl">
-                        <h2 className="text-2xl font-semibold mb-6 text-gray-700 border-b pb-2 border-gray-200">Active Tasks Overview</h2>
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-primary-blue/10">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-primary-blue uppercase tracking-wider">Title / Assigned To</th>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-primary-blue uppercase tracking-wider">Deadline</th>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-primary-blue uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-primary-blue uppercase tracking-wider">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-100">
-                                    {/* Only iterate over tasks that are NOT completed */}
-                                    {activeTasks.map(task => (
-                                        <tr key={task._id} className="group hover:bg-indigo-50/50 transition duration-150"> 
-                                            <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                                {task.title}
-                                                <p className="text-xs text-gray-500 mt-0.5">Assigned to: {task.assignedTo?.name || 'N/A'}</p>
-                                            </td>
-                                            
-                                            <td className="px-6 py-4 text-sm text-gray-500">
-                                                {new Date(task.deadline).toLocaleDateString()}
-                                            </td>
-                                            
-                                            <td className="px-6 py-4">
-                                                <StatusPill status={task.status} />
-                                            </td>
-
-                                            {/* DELETE BUTTON CELL */}
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <button 
-                                                    onClick={() => handleDeleteTask(task._id)}
-                                                    className="bg-red-500 text-white px-3 py-1 rounded text-xs shadow-sm transition duration-200 hover:bg-red-700 transform hover:scale-105"
-                                                >
-                                                    Delete
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    {renderTaskTable(
+                        pendingTasks, 
+                        "Pending Tasks (Awaiting Acceptance)", 
+                        "All tasks are accepted or completed.", 
+                        "bg-yellow-100/70"
+                    )}
                 </div>
             </div>
             
-            {/* Completed Tasks Section (Archive) */}
+            {/* --- 2. ACCEPTED TASKS (FULL WIDTH BLOCK) --- */}
+            {renderTaskTable(
+                acceptedTasks, 
+                "Accepted Tasks (In Progress)", 
+                "No tasks currently in progress.", 
+                "bg-blue-100/70"
+            )}
+
+            {/* --- 3. REJECTED TASKS (FULL WIDTH BLOCK) --- */}
+            {renderTaskTable(
+                rejectedTasks, 
+                "Rejected Tasks (Requires Review)", 
+                "No tasks have been rejected.", 
+                "bg-red-100/70"
+            )}
+            
+            {/* 4. COMPLETED TASKS ARCHIVE (FULL WIDTH BLOCK) */}
             <h2 className="text-2xl font-semibold mt-10 mb-4 text-gray-700">Completed Tasks Archive</h2>
             <div className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl">
                 <div className="overflow-x-auto">
@@ -270,7 +311,7 @@ function AdminDashboard() {
                                         {/* ARCHIVE DELETE BUTTON */}
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <button 
-                                                onClick={() => handleDeleteTask(task._id)}
+                                                onClick={() => window.confirm("Delete this completed task permanently?") && handleDeleteTask(task._id)}
                                                 className="bg-red-300 text-red-800 px-3 py-1 rounded text-xs shadow-sm transition duration-200 hover:bg-red-500 hover:text-white"
                                             >
                                                 Delete Permanently
