@@ -7,17 +7,24 @@ import StatCard from '../components/StatCard';
 import { Link } from 'react-router-dom'; 
 import { createPortal } from 'react-dom'; // CRITICAL: Import createPortal
 
-// --- MODAL RENDERING LOGIC ---
+// --- MODAL RENDERING LOGIC (Moved here for clean component export) ---
 const EmployeeNotificationModal = ({ tasks, onClose, onMarkRead }) => {
     if (!tasks) return null;
 
+    // Handler for the "Mark All Read & Close" button
+    const handleClearAllAlerts = async () => {
+        if (!window.confirm("Mark all new task alerts as read? This will clear the badge count and dismiss alerts.")) return;
+        
+        await onMarkRead();
+    };
+    
     return createPortal(
-        // Backdrop: Fixed position, full screen, semi-transparent black
+        // Backdrop
         <div 
             className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center backdrop-blur-sm"
             onClick={onClose} // Close modal when clicking outside
         >
-            {/* Modal Container: Centered, specific width, handles internal scrolling */}
+            {/* Modal Container */}
             <div 
                 className="bg-white w-full max-w-xl max-h-[90vh] rounded-xl shadow-2xl transform transition-all duration-300 ease-out scale-100"
                 onClick={(e) => e.stopPropagation()} // Prevents click inside from closing modal
@@ -53,17 +60,27 @@ const EmployeeNotificationModal = ({ tasks, onClose, onMarkRead }) => {
                     )}
                 </div>
 
-                <div className="px-6 py-3 border-t text-center">
+                <div className="px-6 py-3 border-t flex justify-between items-center space-x-4">
+                    
+                    {/* Delete All Button (Simulates clearing the read alerts) */}
+                    <button 
+                        onClick={handleClearAllAlerts} 
+                        className="text-sm bg-red-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-red-600 transition"
+                    >
+                        Delete All Alerts
+                    </button>
+                    
+                    {/* Mark Read and Continue Button */}
                     <button 
                         onClick={onMarkRead} 
                         className="text-sm bg-accent-teal text-white px-4 py-2 rounded-lg shadow-md hover:bg-teal-600 transition"
                     >
-                        Mark All Read & Continue
+                        Mark All Read & Close
                     </button>
                 </div>
             </div>
         </div>,
-        document.body // Renders the modal outside the root component
+        document.body
     );
 };
 // --- END MODAL LOGIC ---
@@ -78,13 +95,12 @@ function EmployeeDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  const alertRef = useRef(null); // Not strictly needed with createPortal but good practice
+  const alertRef = useRef(null); 
 
   const fetchNotificationCount = useCallback(async () => {
       try {
           const res = await axios.get('/api/employee/notifications/count');
           setUnreadCount(res.data.count);
-          // Assuming the backend sends the list of tasks to be displayed here
           setUnreadTasksList(res.data.tasks || []); 
       } catch (err) {
           console.error("Failed to fetch notification count:", err);
@@ -94,6 +110,7 @@ function EmployeeDashboard() {
   }, []);
 
   const handleDismissAlerts = async () => {
+    // This is the function that runs when the user clicks 'Mark All Read & Close' or 'Delete All Alerts'
     if (unreadCount > 0) {
         await axios.post('/api/employee/notifications/mark-read');
     }
@@ -132,10 +149,18 @@ function EmployeeDashboard() {
       setError(err.response?.data?.error || `Failed to ${action} task.`);
     }
   };
-  
+
+  if (loading) return <div className="p-8 text-center">Loading Employee Dashboard...</div>;
+
+  const pendingTasks = tasks.filter(t => t.status === 'Pending');
+  const acceptedTasks = tasks.filter(t => t.status === 'Accepted');
+  const completedTasks = tasks.filter(t => t.status === 'Completed');
+  const pendingTasksCount = pendingTasks.length;
+  const completedTasksCount = completedTasks.length;
+  const totalAssigned = tasks.length;
+
   // Helper function for rendering task rows (unchanged)
   const renderTaskRow = (task) => (
-    // ... (renderTaskRow JSX) ...
       <tr key={task._id} className="hover:bg-indigo-50/50 transition duration-150">
           <td className="px-6 py-4 text-sm font-medium text-gray-900">
               <p className="font-bold">{task.title}</p>
@@ -165,34 +190,30 @@ function EmployeeDashboard() {
   const renderTaskTable = (tasks, title, emptyMessage) => (
       <div className="bg-white p-6 rounded-xl shadow-smooth mb-10">
           <h3 className="text-2xl font-semibold mb-4 text-gray-700 border-b pb-2">{title} ({tasks.length})</h3>
-          {tasks.length === 0 ? (
-              <p className="text-center text-gray-500 py-4">{emptyMessage}</p>
-          ) : (
-              <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                          <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task Details</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deadline</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                          </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-100">
-                          {tasks.map(renderTaskRow)}
-                      </tbody>
-                  </table>
-              </div>
-          )}
+          
+          <div className="max-h-[25rem] overflow-y-auto">
+            {tasks.length === 0 ? (
+                <p className="text-center text-gray-500 py-4">{emptyMessage}</p>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task Details</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deadline</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-100">
+                            {tasks.map(renderTaskRow)}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+          </div>
       </div>
   );
-
-  const totalAssigned = tasks.length;
-  const pendingTasks = tasks.filter(t => t.status === 'Pending');
-  const acceptedTasks = tasks.filter(t => t.status === 'Accepted');
-  const completedTasks = tasks.filter(t => t.status === 'Completed');
-  const pendingTasksCount = pendingTasks.length;
-  const completedTasksCount = completedTasks.length;
 
   return (
     <div className="min-h-screen bg-secondary-gray">
@@ -205,11 +226,11 @@ function EmployeeDashboard() {
                 <div className="flex items-center space-x-4">
                     
                     {/* --- NOTIFICATION ICON (Clickable Modal Trigger) --- */}
-                    <div ref={alertRef} className="relative z-20"> 
+                    <div className="relative z-20">
                         <button 
-                            onClick={() => setIsAlertOpen(true)} // Opens the modal
+                            onClick={() => setIsAlertOpen(true)} // CRITICAL FIX: Calls setIsAlertOpen(true)
                             className="p-2 rounded-full text-gray-600 hover:text-primary-blue transition relative"
-                            title="Unread Tasks"
+                            title="New Task Alerts"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.446L4 17h5m6 0v1a3 3 0 11-6 0v-1" />
@@ -258,22 +279,25 @@ function EmployeeDashboard() {
             {/* --- 1. PENDING TASKS --- */}
             {renderTaskTable(
                 pendingTasks, 
-                "1. Pending Tasks (Awaiting Action)", 
-                "All tasks are accepted or completed. You're waiting for new assignments!"
+                "1. Pending Tasks (Awaiting Acceptance)", 
+                "All tasks are accepted or completed. You're waiting for new assignments!",
+                "bg-yellow-100/70"
             )}
 
             {/* --- 2. ACCEPTED TASKS --- */}
             {renderTaskTable(
                 acceptedTasks, 
                 "2. Accepted Tasks (In Progress)", 
-                "No tasks currently in progress. Complete a pending task to move it here."
+                "No tasks currently in progress. Complete a pending task to move it here.",
+                "bg-blue-100/70"
             )}
             
             {/* --- 3. COMPLETED TASKS --- */}
             {renderTaskTable(
                 completedTasks, 
                 "3. Completed Tasks (Archived)", 
-                "No tasks have been finished yet."
+                "No tasks have been finished yet.",
+                "bg-accent-teal/10"
             )}
         </div>
         

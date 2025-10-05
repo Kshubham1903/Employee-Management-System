@@ -315,7 +315,7 @@ function AdminDashboard() {
             </div>
             
             {/* 2. COMPLETED TASKS ARCHIVE (FULL WIDTH BLOCK BELOW) */}
-            <h2 className="text-2xl font-semibold  text-gray-700">Completed Tasks Archive</h2>
+            <h2 className="text-2xl font-semibold mt-10 mb-4 text-gray-700">Completed Tasks Archive</h2>
             {/* Removed internal div wrapper to simplify the height issue */}
             {renderTaskTableContent(
                 completedTasks, 
