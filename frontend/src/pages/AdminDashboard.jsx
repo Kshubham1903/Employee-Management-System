@@ -7,82 +7,13 @@ import StatCard from '../components/StatCard';
 import StatusPill from '../components/StatusPill'; 
 import NotificationCenter from '../components/NotificationCenter'; 
 
-// --- Task Form Component (unchanged logic) ---
-const TaskForm = ({ employees, onCreateTask }) => {
-    const initialTask = { title: '', description: '', deadline: '', assignedTo: '' };
-    const [newTask, setNewTask] = useState(initialTask);
-    
-    useEffect(() => {
-        if (employees.length > 0 && !newTask.assignedTo) {
-            setNewTask(prev => ({ ...prev, assignedTo: employees[0]._id }));
-        }
-    }, [employees, newTask.assignedTo]);
-
-    const handleChange = (e) => { 
-        const { name, value } = e.target;
-        setNewTask(prev => ({ ...prev, [name]: value })); 
-    };
-
-    const handleCreate = (e) => {
-        e.preventDefault();
-        if (!newTask.assignedTo) {
-            alert("Please select an employee.");
-            return;
-        }
-        onCreateTask(newTask);
-        setNewTask(prev => ({ ...initialTask, assignedTo: prev.assignedTo })); 
-    };
-
-    return (
-        // FORM CONTAINER: This will set the target height (approximately h-[35rem])
-        <form onSubmit={handleCreate} className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl mb-10 lg:mb-0">
-            <h3 className="text-2xl font-extrabold text-gray-700 mb-4 border-b-4 border-accent-teal/50 pb-2">Assign New Task</h3>
-            
-            <div className='space-y-4'>
-                <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-1">Task Title</label>
-                    <input type="text" name="title" placeholder="E.g., Design UI Mockups" value={newTask.title} onChange={handleChange} required className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-accent-teal focus:border-accent-teal transition duration-200" />
-                </div>
-                <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-1">Task Description</label>
-                    <textarea type="text" name="description" placeholder="Detailed instructions for the task..." value={newTask.description} onChange={handleChange} required rows="3" className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-accent-teal focus:border-accent-teal transition duration-200" />
-                </div>
-                <div>
-                    <label className="text-sm font-medium text-gray-700 block mb-1">Deadline Date</label>
-                    <input type="date" name="deadline" value={newTask.deadline} onChange={handleChange} required className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-accent-teal hover:border-indigo-400 transition duration-200" />
-                </div>
-            </div>
-            
-            <div className="pt-2">
-                <label className="text-sm font-medium text-gray-700 block mb-2">Assign To (Select one employee)</label>
-                <select 
-                    name="assignedTo" 
-                    value={newTask.assignedTo} 
-                    onChange={handleChange} 
-                    required 
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-accent-teal hover:border-indigo-400 transition duration-200"
-                >
-                    <option value="" disabled>Select Employee</option>
-                    {employees.map(emp => (
-                        <option key={emp._id} value={emp._id}>{emp.name} ({emp.username})</option>
-                    ))}
-                </select>
-            </div>
-
-            <button type="submit" className="w-full bg-accent-teal text-white py-3 rounded-xl font-semibold shadow-lg hover:bg-teal-600 transition duration-300 transform hover:scale-[1.01] tracking-wider mt-6">
-                CREATE TASK
-            </button>
-        </form>
-    );
-};
-
-
 // --- Helper to Render Table Content (Used by the tab view and archive) ---
 const renderTaskTableContent = (tasks, title, emptyMessage, headerBgClass, handleDeleteTask, isArchive = false) => (
     // Outer wrapper for the table and title
     <div className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl mb-8">
         <h2 className="text-2xl font-semibold mb-6 text-gray-700 border-b pb-2 border-gray-200">{title} ({tasks.length})</h2>
-        <div className="overflow-x-auto">
+        <div className={`overflow-x-auto max-h-[32rem] overflow-y-auto ${isArchive ? '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden' : ''}`}>
+            {/* Increased max-h to [32rem] for larger box height in completed tasks section; scrollbar hiding only for archive */}
             {tasks.length === 0 ? (
                 <p className="text-center text-gray-500 py-4">{emptyMessage}</p>
             ) : (
@@ -137,6 +68,76 @@ const renderTaskTableContent = (tasks, title, emptyMessage, headerBgClass, handl
         </div>
     </div>
 );
+
+
+// --- Task Form Component (unchanged logic) ---
+const TaskForm = ({ employees, onCreateTask }) => {
+    const initialTask = { title: '', description: '', deadline: '', assignedTo: '' };
+    const [newTask, setNewTask] = useState(initialTask);
+    
+    useEffect(() => {
+        if (employees.length > 0 && !newTask.assignedTo) {
+            setNewTask(prev => ({ ...prev, assignedTo: employees[0]._id }));
+        }
+    }, [employees, newTask.assignedTo]);
+
+    const handleChange = (e) => { 
+        const { name, value } = e.target;
+        setNewTask(prev => ({ ...prev, [name]: value })); 
+    };
+
+    const handleCreate = (e) => {
+        e.preventDefault();
+        if (!newTask.assignedTo) {
+            alert("Please select an employee.");
+            return;
+        }
+        onCreateTask(newTask);
+        setNewTask(prev => ({ ...initialTask, assignedTo: prev.assignedTo })); 
+    };
+
+    return (
+        // Form container: Increased height to h-[40rem] for larger box size
+        <form onSubmit={handleCreate} className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl h-[40rem]">
+            <h3 className="text-2xl font-extrabold text-gray-700 mb-4 border-b-4 border-accent-teal/50 pb-2">Assign New Task</h3>
+            
+            <div className='space-y-4'>
+                <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-1">Task Title</label>
+                    <input type="text" name="title" placeholder="E.g., Design UI Mockups" value={newTask.title} onChange={handleChange} required className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-accent-teal focus:border-accent-teal transition duration-200" />
+                </div>
+                <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-1">Task Description</label>
+                    <textarea type="text" name="description" placeholder="Detailed instructions for the task..." value={newTask.description} onChange={handleChange} required rows="3" className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-accent-teal focus:border-accent-teal transition duration-200" />
+                </div>
+                <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-1">Deadline Date</label>
+                    <input type="date" name="deadline" value={newTask.deadline} onChange={handleChange} required className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-accent-teal hover:border-indigo-400 transition duration-200" />
+                </div>
+            </div>
+            
+            <div className="pt-2">
+                <label className="text-sm font-medium text-gray-700 block mb-2">Assign To (Select one employee)</label>
+                <select 
+                    name="assignedTo" 
+                    value={newTask.assignedTo} 
+                    onChange={handleChange} 
+                    required 
+                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-accent-teal hover:border-indigo-400 transition duration-200"
+                >
+                    <option value="" disabled>Select Employee</option>
+                    {employees.map(emp => (
+                        <option key={emp._id} value={emp._id}>{emp.name} ({emp.username})</option>
+                    ))}
+                </select>
+            </div>
+
+            <button type="submit" className="w-full bg-accent-teal text-white py-3 rounded-xl font-semibold shadow-lg hover:bg-teal-600 transition duration-300 transform hover:scale-[1.01] tracking-wider mt-6">
+                CREATE TASK
+            </button>
+        </form>
+    );
+};
 
 
 function AdminDashboard() {
@@ -276,14 +277,15 @@ function AdminDashboard() {
             {/* --- 1. FORM AND ACTIVE TASKS GRID (Side-by-Side on Desktop) --- */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
                 
-                {/* A. Task Form (Left Column: 1/3 width) */}
+                {/* A. Task Form (Left Column: 1/3 width, INCREASED HEIGHT) */}
                 <div className="lg:col-span-1">
                     <TaskForm employees={employees} onCreateTask={handleCreateTask} />
                 </div>
 
-                {/* B. Active Task List VIEWER (Right Column: 2/3 width) */}
+                {/* B. Active Task List VIEWER (Right Column: 2/3 width, INCREASED SYNCHRONIZED HEIGHT) */}
                 <div className="lg:col-span-2">
-                    <div className="bg-white rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl h-full"> {/* ADDED h-full HERE */}
+                    {/* Outer container has increased fixed height to match form */}
+                    <div className="bg-white rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl h-[40rem]"> 
                         
                         {/* Tab Headers */}
                         <div className="flex border-b border-gray-200">
@@ -305,8 +307,8 @@ function AdminDashboard() {
                             ))}
                         </div>
                         
-                        {/* Tab Content Area: CRITICAL FIX: Adding max height to the scrollable container */}
-                        <div className="p-4 max-h-[30rem] overflow-y-auto"> 
+                        {/* Tab Content Area: Increased max height to match larger container */}
+                        <div className="p-4 max-h-[36rem] overflow-y-auto"> 
                            {renderTabContent()}
                         </div>
 
@@ -316,15 +318,17 @@ function AdminDashboard() {
             
             {/* 2. COMPLETED TASKS ARCHIVE (FULL WIDTH BLOCK BELOW) */}
             <h2 className="text-2xl font-semibold mt-10 mb-4 text-gray-700">Completed Tasks Archive</h2>
-            {/* Removed internal div wrapper to simplify the height issue */}
-            {renderTaskTableContent(
-                completedTasks, 
-                "Completed Tasks Archive", 
-                "No tasks have been marked as completed yet.", 
-                "bg-accent-teal/10",
-                handleDeleteTask,
-                true // isArchive = true
-            )}
+            {/* Renders the full-width Completed Tasks table */}
+            <div className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl">
+                {renderTaskTableContent(
+                    completedTasks, 
+                    "Completed Tasks Archive", 
+                    "No tasks have been marked as completed yet.", 
+                    "bg-accent-teal/10",
+                    handleDeleteTask,
+                    true // isArchive = true
+                )}
+            </div>
         </div>
     </div>
   );

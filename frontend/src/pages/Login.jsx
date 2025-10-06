@@ -28,7 +28,7 @@ function Login() {
         {/* THEME BUTTON ABSOLUTE PLACEMENT REMOVED */}
         
         <h2 className="text-4xl font-extrabold text-primary-blue text-center mb-2">
-          TaskFlow Portal
+          Login Here
         </h2>
         <p className="text-center text-gray-500 mb-8">Sign in to manage your tasks.</p>
         
@@ -61,9 +61,9 @@ function Login() {
         {error && <p className="text-red-500 mt-4 text-center text-sm">{error}</p>}
         
         <p className="mt-8 text-center text-sm text-gray-600">
-          <Link to="/forgot-password" className="text-accent-teal hover:underline font-medium block mb-2">
+          {/* <Link to="/forgot-password" className="text-accent-teal hover:underline font-medium block mb-2">
             Forgot Password?
-          </Link>
+          </Link> */}
           Don't have an account? 
           <Link to="/register" className="text-accent-teal hover:underline ml-1 font-medium">
             Register here
