@@ -229,7 +229,8 @@ function AdminDashboard() {
         <header className="bg-white shadow-lg sticky top-0 z-10">
             <div className="container mx-auto max-w-7xl px-6 py-4 flex justify-between items-center">
                 <h1 className="text-3xl font-extrabold text-primary-blue tracking-wider">
-                    Optimistic <span className="text-accent-teal">TaskFlow</span>
+                    {/* Optimistic <span className="text-accent-teal">Admin</span> */}
+                    Admin <span className="text-accent-teal">Dashboard</span> 
                 </h1>
                 <div className="flex items-center space-x-4">
                     
