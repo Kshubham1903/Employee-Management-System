@@ -39,7 +39,7 @@ mongoose.connect(MONGODB_URI)
 
 
 // --- Import and Use Routes ---
-const authRoutes = require('./routes/Auth'); 
+const authRoutes = require('./routes/auth'); 
 const adminRoutes = require('./routes/admin'); 
 const employeeRoutes = require('./routes/employee');
 
