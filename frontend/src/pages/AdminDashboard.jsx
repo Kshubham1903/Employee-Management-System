@@ -7,13 +7,13 @@ import StatCard from '../components/StatCard';
 import StatusPill from '../components/StatusPill'; 
 import NotificationCenter from '../components/NotificationCenter'; 
 
-// --- 1. Helper to Render Table Content (DEFINED FIRST) ---
-// This must be outside the main component function
+// --- Helper to Render Table Content (Used by the tab view and archive) ---
 const renderTaskTableContent = (tasks, title, emptyMessage, headerBgClass, handleDeleteTask, isArchive = false) => (
     // Outer wrapper for the table and title
     <div className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl mb-8">
         <h2 className="text-2xl font-semibold mb-6 text-gray-700 border-b pb-2 border-gray-200">{title} ({tasks.length})</h2>
-        <div className="overflow-x-auto">
+        <div className={`overflow-x-auto max-h-[32rem] overflow-y-auto ${isArchive ? '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden' : ''}`}>
+            {/* Increased max-h to [32rem] for larger box height in completed tasks section; scrollbar hiding only for archive */}
             {tasks.length === 0 ? (
                 <p className="text-center text-gray-500 py-4">{emptyMessage}</p>
             ) : (
@@ -70,7 +70,7 @@ const renderTaskTableContent = (tasks, title, emptyMessage, headerBgClass, handl
 );
 
 
-// --- 2. Task Form Component (DEFINED SECOND) ---
+// --- Task Form Component (unchanged logic) ---
 const TaskForm = ({ employees, onCreateTask }) => {
     const initialTask = { title: '', description: '', deadline: '', assignedTo: '' };
     const [newTask, setNewTask] = useState(initialTask);
@@ -97,7 +97,8 @@ const TaskForm = ({ employees, onCreateTask }) => {
     };
 
     return (
-        <form onSubmit={handleCreate} className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl h-[30rem]">
+        // Form container: Increased height to h-[40rem] for larger box size
+        <form onSubmit={handleCreate} className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl h-[40rem]">
             <h3 className="text-2xl font-extrabold text-gray-700 mb-4 border-b-4 border-accent-teal/50 pb-2">Assign New Task</h3>
             
             <div className='space-y-4'>
@@ -139,7 +140,6 @@ const TaskForm = ({ employees, onCreateTask }) => {
 };
 
 
-// --- 3. Main Admin Dashboard Component (DEFINED LAST) ---
 function AdminDashboard() {
   const { user, logout } = useAuth();
   const [tasks, setTasks] = useState([]);
@@ -277,15 +277,15 @@ function AdminDashboard() {
             {/* --- 1. FORM AND ACTIVE TASKS GRID (Side-by-Side on Desktop) --- */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
                 
-                {/* A. Task Form (Left Column: 1/3 width, FIXED HEIGHT) */}
+                {/* A. Task Form (Left Column: 1/3 width, INCREASED HEIGHT) */}
                 <div className="lg:col-span-1">
                     <TaskForm employees={employees} onCreateTask={handleCreateTask} />
                 </div>
 
-                {/* B. Active Task List VIEWER (Right Column: 2/3 width, SYNCHRONIZED HEIGHT) */}
+                {/* B. Active Task List VIEWER (Right Column: 2/3 width, INCREASED SYNCHRONIZED HEIGHT) */}
                 <div className="lg:col-span-2">
-                    {/* Outer container has fixed height to match form */}
-                    <div className="bg-white rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl h-[30rem]"> 
+                    {/* Outer container has increased fixed height to match form */}
+                    <div className="bg-white rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl h-[40rem]"> 
                         
                         {/* Tab Headers */}
                         <div className="flex border-b border-gray-200">
@@ -307,8 +307,8 @@ function AdminDashboard() {
                             ))}
                         </div>
                         
-                        {/* Tab Content Area: CRITICAL FIX: Applying max height to the scrollable container */}
-                        <div className="p-4 max-h-[26rem] overflow-y-auto"> 
+                        {/* Tab Content Area: Increased max height to match larger container */}
+                        <div className="p-4 max-h-[36rem] overflow-y-auto"> 
                            {renderTabContent()}
                         </div>
 
@@ -319,7 +319,7 @@ function AdminDashboard() {
             {/* 2. COMPLETED TASKS ARCHIVE (FULL WIDTH BLOCK BELOW) */}
             <h2 className="text-2xl font-semibold mt-10 mb-4 text-gray-700">Completed Tasks Archive</h2>
             {/* Renders the full-width Completed Tasks table */}
-            <div className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl max-h-[25rem] overflow-y-auto">
+            <div className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl">
                 {renderTaskTableContent(
                     completedTasks, 
                     "Completed Tasks Archive", 

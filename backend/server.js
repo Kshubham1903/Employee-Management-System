@@ -14,9 +14,10 @@ const MONGODB_URI = process.env.MONGODB_URI;
 const allowedOrigins = [
     'http://localhost:5173', 
     'https://employee-management-system-delta-three.vercel.app', // <-- YOUR LIVE VERCEL URL
-    'https://employee-management-system-0d92.onrender.com'
+    
+    
     // Add your Render URL here if you encounter issues making calls to Render's internal API domain
-    // Example: 'https://optimistic-taskflow-api.onrender.com' 
+    'https://employee-management-system-0d92.onrender.com'
 ];
 
 const corsOptions = {
