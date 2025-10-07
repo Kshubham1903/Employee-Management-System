@@ -8,19 +8,26 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
 
+// --- CRITICAL DEPLOYMENT SETTINGS ---
+// 1. Tell Express to trust the external proxy (REQUIRED for platforms like Render/Vercel)
+app.set('trust proxy', 1);
+// ------------------------------------
+
 // --- Middleware Setup ---
 app.use(express.json()); 
 app.use(express.urlencoded({ extended: true }));
 
-// Session middleware (Includes FIX for cross-origin local dev)
+// 2. Session middleware (Includes FIX for cross-origin local dev)
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        maxAge: 1000 * 60 * 60 * 24, 
+        maxAge: 1000 * 60 * 60 * 24, // 24 hours
         httpOnly: true, 
+        // Must be TRUE in production for HTTPS cookies
         secure: process.env.NODE_ENV === 'production' ? true : false, 
+        // Set to 'lax' for local development (different ports)
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
     }
 }));
@@ -31,12 +38,11 @@ mongoose.connect(MONGODB_URI)
     .catch(err => console.error('MongoDB connection error:', err));
 
 
-// --- Import Routes ---
+// --- Import and Use Routes ---
 const authRoutes = require('./routes/auth'); 
 const adminRoutes = require('./routes/admin'); 
 const employeeRoutes = require('./routes/employee');
 
-// --- Use Routes ---
 app.use('/', authRoutes); 
 app.use('/api/admin', adminRoutes);
 app.use('/api/employee', employeeRoutes);
@@ -45,8 +51,9 @@ app.use('/api/employee', employeeRoutes);
 const buildPath = path.join(__dirname, 'frontend/dist');
 app.use(express.static(buildPath));
 
-// Final fix for PathError: Use the root path '/' as the final fallback
+// Final Fallback for client-side routing (Vite HTML file)
 app.get('/', (req, res) => {
+    // Prevent API routes from accidentally hitting the index.html fallback
     if (req.url.startsWith('/api') || req.url.startsWith('/login') || req.url.startsWith('/register')) {
          return res.status(404).json({ message: 'API endpoint not found' });
     }

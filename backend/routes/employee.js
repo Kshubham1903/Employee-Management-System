@@ -121,4 +121,46 @@ router.get('/me', isEmployee, async (req, res) => {
         res.status(500).json({ error: 'Server error fetching user data.' });
     }
 });
+
+// routes/employee.js (CRITICAL FIX: Ensure user ID is present and errors are logged)
+
+router.post('/update-info', async (req, res) => {
+    const { name, email } = req.body;
+    const userId = req.session.userId; // Must be present!
+    
+    if (!userId) {
+        // If session ID is missing (very rare), reject immediately.
+        return res.status(401).json({ error: 'Session expired. Please log in again.' });
+    }
+    
+    if (!name || !email) {
+        return res.status(400).json({ error: 'Name and email are required.' });
+    }
+
+    try {
+        const user = await User.findById(userId);
+        if (!user) { 
+            return res.status(404).json({ error: 'User not found.' }); 
+        }
+
+        // Update fields
+        user.name = name;
+        user.email = email;
+
+        await user.save();
+        req.session.name = user.name; // Update the session immediately
+        
+        res.json({ message: 'Profile information updated successfully!' });
+
+    } catch (err) {
+        // Log the detailed database error to the console for debugging
+        console.error("Employee Update Failed:", err); 
+        
+        if (err.code === 11000) { 
+            return res.status(400).json({ error: 'Email already in use by another user.' }); 
+        }
+        res.status(500).json({ error: 'Server error during profile update.' });
+    }
+});
+
 module.exports = router;
