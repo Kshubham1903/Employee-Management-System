@@ -3,7 +3,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 
 import { useNavigate } from 'react-router-dom';
-const baseURL = import.meta.env.VITE_API_BASE_URL || '/';
+const baseURL = "https://employee-management-system-1-d8a0.onrender.com" || '/';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
