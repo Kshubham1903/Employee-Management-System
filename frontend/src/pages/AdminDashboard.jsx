@@ -7,7 +7,7 @@ import StatCard from '../components/StatCard';
 import StatusPill from '../components/StatusPill'; 
 import NotificationCenter from '../components/NotificationCenter'; 
 
-// --- Helper to Render Table Content (Used by the tab view and archive) ---
+// --- Helper to Render Table Content (DEFINED FIRST) ---
 const renderTaskTableContent = (tasks, title, emptyMessage, headerBgClass, handleDeleteTask, isArchive = false) => (
     // Outer wrapper for the table and title
     <div className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl mb-8">
@@ -69,7 +69,7 @@ const renderTaskTableContent = (tasks, title, emptyMessage, headerBgClass, handl
 );
 
 
-// --- Task Form Component (unchanged logic) ---
+// --- 2. Task Form Component (The separate function definition) ---
 const TaskForm = ({ employees, onCreateTask }) => {
     const initialTask = { title: '', description: '', deadline: '', assignedTo: '' };
     const [newTask, setNewTask] = useState(initialTask);
@@ -139,6 +139,7 @@ const TaskForm = ({ employees, onCreateTask }) => {
 };
 
 
+// --- 3. Main Admin Dashboard Component (FINAL CODE) ---
 function AdminDashboard() {
   const { user, logout } = useAuth();
   const [tasks, setTasks] = useState([]);
