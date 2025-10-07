@@ -7,7 +7,7 @@ import StatCard from '../components/StatCard';
 import StatusPill from '../components/StatusPill'; 
 import NotificationCenter from '../components/NotificationCenter'; 
 
-// --- 1. Helper to Render Table Content (DEFINED FIRST) ---
+// --- Helper to Render Table Content (DEFINED FIRST) ---
 const renderTaskTableContent = (tasks, title, emptyMessage, headerBgClass, handleDeleteTask, isArchive = false) => (
     // Outer wrapper for the table and title
     <div className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl mb-8">
@@ -96,6 +96,7 @@ const TaskForm = ({ employees, onCreateTask }) => {
     };
 
     return (
+        // Form container: Fixed height h-[30rem] to define the left column's size
         <form onSubmit={handleCreate} className="bg-white p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl h-[30rem]">
             <h3 className="text-2xl font-extrabold text-gray-700 mb-4 border-b-4 border-accent-teal/50 pb-2">Assign New Task</h3>
             
@@ -138,7 +139,7 @@ const TaskForm = ({ employees, onCreateTask }) => {
 };
 
 
-// --- 3. Main Admin Dashboard Component ---
+// --- 3. Main Admin Dashboard Component (DEFINED LAST) ---
 function AdminDashboard() {
   const { user, logout } = useAuth();
   const [tasks, setTasks] = useState([]);
@@ -201,7 +202,6 @@ function AdminDashboard() {
   const renderTabContent = () => {
     switch (activeTab) {
         case 'Pending':
-            // Pass isTabContent=true to identify which element needs the smaller fixed scroll height
             return renderTaskTableContent(pendingTasks, "Pending Tasks (Awaiting Acceptance)", "No pending tasks found.", "bg-yellow-100/70", handleDeleteTask);
         case 'Accepted':
             return renderTaskTableContent(acceptedTasks, "Accepted Tasks (In Progress)", "No accepted tasks found.", "bg-blue-100/70", handleDeleteTask);
@@ -277,12 +277,12 @@ function AdminDashboard() {
             {/* --- 1. FORM AND ACTIVE TASKS GRID (Side-by-Side on Desktop) --- */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
                 
-                {/* A. Task Form (Left Column: 1/3 width, FIXED HEIGHT) */}
+                {/* A. Task Form (Left Column: 1/3 width) */}
                 <div className="lg:col-span-1">
                     <TaskForm employees={employees} onCreateTask={handleCreateTask} />
                 </div>
 
-                {/* B. Active Task List VIEWER (Right Column: 2/3 width, SYNCHRONIZED HEIGHT) */}
+                {/* B. Active Task List VIEWER (Right Column: 2/3 width) */}
                 <div className="lg:col-span-2">
                     {/* Outer container has fixed height to match form */}
                     <div className="bg-white rounded-2xl shadow-lg transition-all duration-300 hover:shadow-2xl h-[30rem]"> 
