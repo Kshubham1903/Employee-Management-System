@@ -7,6 +7,7 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI;
+const cors = require("cors");
 
 // --- CRITICAL DEPLOYMENT SETTINGS ---
 app.set('trust proxy', 1);
